@@ -2,7 +2,7 @@
 session_start();
 
 try {
-    $pdo = new PDO('mysql:host=localhost;dbname=u67365', 'u67365', 'пароль');
+    $pdo = new PDO('mysql:host=localhost;dbname=u67365', 'u67365', 'er5E$53s');
     echo "OK";
 } catch (PDOException $e) {
     echo $e->getMessage();
