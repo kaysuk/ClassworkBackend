@@ -1,177 +1,189 @@
 <?php
 session_start();
 
-try {
-    $pdo = new PDO('mysql:host=localhost;dbname=u67365', 'u67365', 'er5E$53s');
-} catch (PDOException $e) {
-    die("Ошибка подключения: " . htmlspecialchars($e->getMessage()));
-}
+require_once 'db.php';
+require_once 'auth.php';
+require_once 'validation.php';
 
-$errors = [];
-$errorFields = [];
-$validationRules = [
-    'name' => [
-        'pattern' => "/^[a-zA-Zа-яА-Я\s]{1,150}$/u",
-        'message' => "Некорректное ФИО",
-        'allowed' => "Допустимо: буквы и пробелы"
-    ],
-    'phone' => [
-        'pattern' => "/^[0-9+\-\s()]{5,20}$/",
-        'message' => "Некорректный телефон",
-        'allowed' => "Допустимо: цифры, +, -, скобки и пробелы"
-    ],
-    'email' => [
-        'pattern' => "/^[a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/",
-        'message' => "Некорректный email",
-        'allowed' => "Формат: name@example.com"
-    ],
-    'birthdate' => [
-        'pattern' => null,
-        'message' => "Укажите дату рождения",
-        'allowed' => "Формат: YYYY-MM-DD"
-    ],
-    'bio' => [
-        'pattern' => "/^[a-zA-Zа-яА-Я0-9\s.,!?-]{10,500}$/u",
-        'message' => "Некорректная биография",
-        'allowed' => "Допустимо: буквы, цифры, пробелы, . , ! ? -"
-    ]
-];
+initDB();
 
-// Получаем данные из POST
-$name = $_POST['name'] ?? '';
-$phone = $_POST['phone'] ?? '';
-$email = $_POST['email'] ?? '';
-$birthdate = $_POST['birthdate'] ?? '';
-$gender = $_POST['gender'] ?? '';
-$languages = $_POST['languages'] ?? [];
-$bio = $_POST['bio'] ?? '';
-$contract = isset($_POST['contract']) ? 1 : 0;
+$action = $_GET['action'] ?? 'register';
+$isLoggedIn = isLoggedIn();
 
-// Проверяем, была ли отправлена форма
-if (!empty($_POST)) {
-    # ===================
-    # ВАЛИДАЦИЯ
-    # ===================
-
-    if (empty($name)) {
-        $errors[] = "ФИО не заполнено";
-        $errorFields['name'] = $validationRules['name']['allowed'];
-    } elseif (!preg_match($validationRules['name']['pattern'], $name)) {
-        $errors[] = $validationRules['name']['message'] . ". " . $validationRules['name']['allowed'];
-        $errorFields['name'] = $validationRules['name']['allowed'];
-    }
-
-    if (empty($phone)) {
-        $errors[] = "Телефон не заполнен";
-        $errorFields['phone'] = $validationRules['phone']['allowed'];
-    } elseif (!preg_match($validationRules['phone']['pattern'], $phone)) {
-        $errors[] = $validationRules['phone']['message'] . ". " . $validationRules['phone']['allowed'];
-        $errorFields['phone'] = $validationRules['phone']['allowed'];
-    }
-
-    if (empty($email)) {
-        $errors[] = "Email не заполнен";
-        $errorFields['email'] = $validationRules['email']['allowed'];
-    } elseif (!preg_match($validationRules['email']['pattern'], $email)) {
-        $errors[] = $validationRules['email']['message'] . ". " . $validationRules['email']['allowed'];
-        $errorFields['email'] = $validationRules['email']['allowed'];
-    }
-
-    if (!$birthdate) {
-        $errors[] = $validationRules['birthdate']['message'];
-        $errorFields['birthdate'] = $validationRules['birthdate']['allowed'];
-    }
-
-    if (!in_array($gender, ['male', 'female'])) {
-        $errors[] = "Выберите пол";
-        $errorFields['gender'] = "required";
-    }
-
-    if (empty($languages)) {
-        $errors[] = "Выберите хотя бы один язык";
-        $errorFields['languages'] = "required";
-    }
-
-    if (empty($bio)) {
-        $errors[] = "Заполните биографию";
-        $errorFields['bio'] = $validationRules['bio']['allowed'];
-    } elseif (!preg_match($validationRules['bio']['pattern'], $bio)) {
-        $errors[] = $validationRules['bio']['message'] . ". " . $validationRules['bio']['allowed'];
-        $errorFields['bio'] = $validationRules['bio']['allowed'];
-    }
-
-    if (!$contract) {
-        $errors[] = "Необходимо согласие с контрактом";
-        $errorFields['contract'] = "required";
-    }
-
-    # ===================
-    # ЕСЛИ ЕСТЬ ОШИБКИ
-    # ===================
-
-    if (!empty($errors)) {
-        // Сохраняем ошибки и введенные значения в Cookies до конца сессии
-        setcookie("form_errors", json_encode($errors), 0, "/");
-        setcookie("form_error_fields", json_encode($errorFields), 0, "/");
-        setcookie("form_name", $name, 0, "/");
-        setcookie("form_phone", $phone, 0, "/");
-        setcookie("form_email", $email, 0, "/");
-        setcookie("form_birthdate", $birthdate, 0, "/");
-        setcookie("form_gender", $gender, 0, "/");
-        setcookie("form_bio", $bio, 0, "/");
-        setcookie("form_languages", json_encode($languages), 0, "/");
+// =================== РЕГИСТРАЦИЯ ===================
+if ($action === 'register' && $_SERVER['REQUEST_METHOD'] === 'POST' && !$isLoggedIn) {
+    $data = [
+        'name' => $_POST['name'] ?? '',
+        'phone' => $_POST['phone'] ?? '',
+        'email' => $_POST['email'] ?? '',
+        'birthdate' => $_POST['birthdate'] ?? '',
+        'gender' => $_POST['gender'] ?? '',
+        'languages' => $_POST['languages'] ?? [],
+        'bio' => $_POST['bio'] ?? '',
+        'contract' => isset($_POST['contract']) ? 1 : 0
+    ];
+    
+    $validation = validateFormData($data);
+    
+    if (!$validation['valid']) {
+        setcookie("form_errors", json_encode($validation['errors']), 0, "/");
+        setcookie("form_error_fields", json_encode($validation['errorFields']), 0, "/");
+        setcookie("form_name", $data['name'], 0, "/");
+        setcookie("form_phone", $data['phone'], 0, "/");
+        setcookie("form_email", $data['email'], 0, "/");
+        setcookie("form_birthdate", $data['birthdate'], 0, "/");
+        setcookie("form_gender", $data['gender'], 0, "/");
+        setcookie("form_bio", $data['bio'], 0, "/");
+        setcookie("form_languages", json_encode($data['languages']), 0, "/");
         
         header("Location: form.php");
         exit;
     }
-
-    # ===================
-    # СОХРАНЕНИЕ
-    # ===================
-
+    
     try {
+        $pdo = getDB();
         $pdo->beginTransaction();
-
+        
+        // Генерируем учетные данные
+        $creds = generateCredentials();
+        
+        // Создаем пользователя
+        $userId = createUser($creds['login'], $creds['password']);
+        
+        // Сохраняем приложение
         $stmt = $pdo->prepare("
-            INSERT INTO applications (name, phone, email, birthdate, gender, bio, contract_agreed)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO applications (user_id, name, phone, email, birthdate, gender, bio, contract_agreed)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ");
-        $stmt->execute([$name, $phone, $email, $birthdate, $gender, $bio, $contract]);
-
+        $stmt->execute([
+            $userId,
+            $data['name'],
+            $data['phone'],
+            $data['email'],
+            $data['birthdate'],
+            $data['gender'],
+            $data['bio'],
+            $data['contract']
+        ]);
+        
         $appId = $pdo->lastInsertId();
-
+        
+        // Сохраняем языки
         $stmt = $pdo->prepare("
             INSERT INTO application_languages (application_id, language_id)
             VALUES (?, ?)
         ");
-
-        foreach ($languages as $lang) {
-            $stmt->execute([$appId, $lang]);
+        foreach ($data['languages'] as $langId) {
+            $stmt->execute([$appId, $langId]);
         }
-
+        
         $pdo->commit();
-
-        // Сохраняем успешно введенные данные на 1 год
+        
+        // Сохраняем учетные данные в сессию для отображения
+        $_SESSION['new_credentials'] = [
+            'login' => $creds['login'],
+            'password' => $creds['password']
+        ];
+        $_SESSION['new_app_id'] = $appId;
+        
+        // Сохраняем значения в Cookies на 1 год
         $oneYearExpiry = time() + (365 * 24 * 60 * 60);
-        setcookie("form_name", $name, $oneYearExpiry, "/");
-        setcookie("form_phone", $phone, $oneYearExpiry, "/");
-        setcookie("form_email", $email, $oneYearExpiry, "/");
-        setcookie("form_birthdate", $birthdate, $oneYearExpiry, "/");
-        setcookie("form_gender", $gender, $oneYearExpiry, "/");
-        setcookie("form_bio", $bio, $oneYearExpiry, "/");
-        setcookie("form_languages", json_encode($languages), $oneYearExpiry, "/");
-
-        // Удаляем Cookies с ошибками
+        setcookie("form_name", $data['name'], $oneYearExpiry, "/");
+        setcookie("form_phone", $data['phone'], $oneYearExpiry, "/");
+        setcookie("form_email", $data['email'], $oneYearExpiry, "/");
+        setcookie("form_birthdate", $data['birthdate'], $oneYearExpiry, "/");
+        setcookie("form_gender", $data['gender'], $oneYearExpiry, "/");
+        setcookie("form_bio", $data['bio'], $oneYearExpiry, "/");
+        setcookie("form_languages", json_encode($data['languages']), $oneYearExpiry, "/");
+        
         setcookie("form_errors", "", time() - 3600, "/");
         setcookie("form_error_fields", "", time() - 3600, "/");
-
-        // Редирект с параметром успеха
-        header("Location: form.php?success=1");
+        
+        header("Location: form.php?show_creds=1");
         exit;
     } catch (Exception $e) {
-        $errors[] = "Ошибка базы данных: " . htmlspecialchars($e->getMessage());
-        setcookie("form_errors", json_encode($errors), 0, "/");
+        $pdo->rollBack();
+        setcookie("form_errors", json_encode(["Ошибка: " . $e->getMessage()]), 0, "/");
         header("Location: form.php");
         exit;
     }
 }
+
+// =================== ЛОГИН ===================
+if ($action === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $login = $_POST['login'] ?? '';
+    $password = $_POST['password'] ?? '';
+    
+    if (empty($login) || empty($password)) {
+        setcookie("login_error", "Введите логин и пароль", 0, "/");
+        header("Location: login.php");
+        exit;
+    }
+    
+    $result = login($login, $password);
+    
+    if (!$result['success']) {
+        setcookie("login_error", $result['error'], 0, "/");
+        header("Location: login.php");
+        exit;
+    }
+    
+    setcookie("login_error", "", time() - 3600, "/");
+    header("Location: account.php");
+    exit;
+}
+
+// =================== ВЫХОД ===================
+if ($action === 'logout') {
+    logout();
+    header("Location: form.php");
+    exit;
+}
+
+// =================== РЕДАКТИРОВАНИЕ ===================
+if ($action === 'edit' && $_SERVER['REQUEST_METHOD'] === 'POST' && $isLoggedIn) {
+    $appId = $_POST['app_id'] ?? null;
+    
+    if (!$appId) {
+        header("Location: account.php");
+        exit;
+    }
+    
+    $data = [
+        'name' => $_POST['name'] ?? '',
+        'phone' => $_POST['phone'] ?? '',
+        'email' => $_POST['email'] ?? '',
+        'birthdate' => $_POST['birthdate'] ?? '',
+        'gender' => $_POST['gender'] ?? '',
+        'languages' => $_POST['languages'] ?? [],
+        'bio' => $_POST['bio'] ?? '',
+        'contract' => isset($_POST['contract']) ? 1 : 0
+    ];
+    
+    $validation = validateFormData($data);
+    
+    if (!$validation['valid']) {
+        $_SESSION['edit_errors'] = $validation['errors'];
+        $_SESSION['edit_error_fields'] = $validation['errorFields'];
+        $_SESSION['edit_app_id'] = $appId;
+        header("Location: account.php?edit_app=" . $appId);
+        exit;
+    }
+    
+    require_once 'auth.php';
+    $result = updateApplication($appId, $data, getCurrentUserId());
+    
+    if (!$result['success']) {
+        $_SESSION['edit_errors'] = [$result['error']];
+        $_SESSION['edit_app_id'] = $appId;
+    } else {
+        $_SESSION['edit_success'] = true;
+    }
+    
+    header("Location: account.php?edit_app=" . $appId);
+    exit;
+}
+
+// Безопасный выход для неожиданных действий
+header("Location: form.php");
+exit;

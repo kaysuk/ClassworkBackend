@@ -15,11 +15,26 @@ $savedLanguages = isset($_COOKIE['form_languages']) ? json_decode($_COOKIE['form
 // Проверяем успех
 $success = isset($_GET['success']);
 
+// Новые учетные данные
+$showCreds = isset($_GET['show_creds']);
+$newLogin = $_SESSION['new_credentials']['login'] ?? null;
+$newPassword = $_SESSION['new_credentials']['password'] ?? null;
+
+// Удаляем новые учетные данные из сессии после отображения
+if ($showCreds && $newLogin && $newPassword) {
+    unset($_SESSION['new_credentials']);
+    unset($_SESSION['new_app_id']);
+}
+
 // Удаляем Cookies с ошибками после отображения
 if (!empty($errors)) {
     setcookie("form_errors", "", time() - 3600, "/");
     setcookie("form_error_fields", "", time() - 3600, "/");
 }
+
+// Проверяем авторизацию
+$isLoggedIn = isset($_SESSION['user_id']);
+?>
 ?>
 
 <!DOCTYPE html>
@@ -151,6 +166,72 @@ button {
 button:hover {
     background: #5a67d8;
 }
+
+.creds-section {
+    background: #efe;
+    border-left: 4px solid #4c4;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    color: #333;
+}
+
+.creds-section h3 {
+    margin-top: 0;
+    color: #4c4;
+}
+
+.cred-line {
+    display: flex;
+    gap: 20px;
+    margin: 15px 0;
+    align-items: center;
+}
+
+.cred-label {
+    font-weight: bold;
+    min-width: 100px;
+}
+
+.cred-value {
+    font-family: monospace;
+    background: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    flex: 1;
+}
+
+.copy-btn {
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.copy-btn:hover {
+    background: #5a67d8;
+}
+
+.links {
+    text-align: center;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #ddd;
+}
+
+.links a {
+    color: #667eea;
+    text-decoration: none;
+    margin: 0 10px;
+}
+
+.links a:hover {
+    text-decoration: underline;
+}
 </style>
 
 </head>
@@ -158,6 +239,33 @@ button:hover {
 
 <div class="container">
 <h2>Форма заявки</h2>
+
+<?php if ($showCreds && $newLogin && $newPassword): ?>
+    <div class="creds-section">
+        <h3>✓ Регистрация завершена!</h3>
+        <p>Ваши учетные данные для входа (сохраните их в безопасном месте):</p>
+        
+        <div class="cred-line">
+            <div class="cred-label">Логин:</div>
+            <div class="cred-value"><?php echo htmlspecialchars($newLogin); ?></div>
+            <button class="copy-btn" onclick="navigator.clipboard.writeText('<?php echo htmlspecialchars($newLogin); ?>')">Копировать</button>
+        </div>
+        
+        <div class="cred-line">
+            <div class="cred-label">Пароль:</div>
+            <div class="cred-value"><?php echo htmlspecialchars($newPassword); ?></div>
+            <button class="copy-btn" onclick="navigator.clipboard.writeText('<?php echo htmlspecialchars($newPassword); ?>')">Копировать</button>
+        </div>
+        
+        <p style="margin-bottom: 0;"><a href="login.php" style="color: #667eea; font-weight: bold;">→ Перейти к входу</a></p>
+    </div>
+<?php endif; ?>
+
+<?php if ($isLoggedIn): ?>
+    <div style="background: #e3f2fd; border-left: 4px solid #2196f3; padding: 15px; margin-bottom: 20px; border-radius: 4px; color: #1565c0;">
+        Вы авторизованы. <a href="account.php" style="color: #2196f3; font-weight: bold;">Перейти в личный кабинет</a>
+    </div>
+<?php endif; ?>
 
 <?php if (!empty($errors)): ?>
     <div class="error-section">
@@ -176,7 +284,8 @@ button:hover {
     </div>
 <?php endif; ?>
 
-<form method="POST" action="index.php">
+<?php if (!$isLoggedIn): ?>
+<form method="POST" action="index.php?action=register">
 
 <label>ФИО</label>
 <input type="text" name="name" value="<?php echo $savedName; ?>" 
@@ -264,7 +373,12 @@ button:hover {
 
 <button type="submit">Сохранить</button>
 
+<div class="links">
+    Есть учетная запись? <a href="login.php">Вход</a>
+</div>
+
 </form>
+<?php endif; ?>
 </div>
 
 </body>
