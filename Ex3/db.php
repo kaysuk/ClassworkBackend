@@ -66,4 +66,14 @@ function initDB() {
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ");
+    
+    // Таблица администраторов
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS admins (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            login VARCHAR(50) UNIQUE NOT NULL,
+            password_hash VARCHAR(255) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ");
 }

@@ -145,3 +145,115 @@ function updateApplication($appId, $data, $userId) {
         return ['success' => false, 'error' => $e->getMessage()];
     }
 }
+
+// ========== АДМИНИСТРАТОРСКИЕ ФУНКЦИИ ==========
+
+function findAdminByLogin($login) {
+    $pdo = getDB();
+    $stmt = $pdo->prepare("SELECT id, login, password_hash FROM admins WHERE login = ?");
+    $stmt->execute([$login]);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
+
+function loginAdmin($login, $password) {
+    $admin = findAdminByLogin($login);
+    
+    if (!$admin) {
+        return ['success' => false, 'error' => 'Неверный логин или пароль'];
+    }
+    
+    if (!verifyPassword($password, $admin['password_hash'])) {
+        return ['success' => false, 'error' => 'Неверный логин или пароль'];
+    }
+    
+    $_SESSION['admin_id'] = $admin['id'];
+    $_SESSION['admin_login'] = $admin['login'];
+    
+    return ['success' => true, 'admin_id' => $admin['id']];
+}
+
+function isAdminLoggedIn() {
+    return isset($_SESSION['admin_id']) && !empty($_SESSION['admin_id']);
+}
+
+function getAdminHttpAuth() {
+    // Проверяем HTTP Basic Auth
+    if (isset($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['PHP_AUTH_PW'])) {
+        return [
+            'login' => $_SERVER['PHP_AUTH_USER'],
+            'password' => $_SERVER['PHP_AUTH_PW']
+        ];
+    }
+    return null;
+}
+
+function requireHttpAuth() {
+    $auth = getAdminHttpAuth();
+    
+    if (!$auth) {
+        header('WWW-Authenticate: Basic realm="Admin Area"');
+        header('HTTP/1.0 401 Unauthorized');
+        die('Требуется авторизация');
+    }
+    
+    $result = loginAdmin($auth['login'], $auth['password']);
+    
+    if (!$result['success']) {
+        header('WWW-Authenticate: Basic realm="Admin Area"');
+        header('HTTP/1.0 401 Unauthorized');
+        die('Неверные учетные данные');
+    }
+    
+    return true;
+}
+
+function getAllApplications() {
+    $pdo = getDB();
+    $stmt = $pdo->query("
+        SELECT a.*, u.login 
+        FROM applications a
+        LEFT JOIN users u ON a.user_id = u.id
+        ORDER BY a.created_at DESC
+    ");
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function deleteApplication($appId) {
+    $pdo = getDB();
+    
+    try {
+        $pdo->beginTransaction();
+        
+        // Удаляем языки
+        $stmt = $pdo->prepare("DELETE FROM application_languages WHERE application_id = ?");
+        $stmt->execute([$appId]);
+        
+        // Удаляем приложение
+        $stmt = $pdo->prepare("DELETE FROM applications WHERE id = ?");
+        $stmt->execute([$appId]);
+        
+        $pdo->commit();
+        return true;
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        return false;
+    }
+}
+
+function getLanguageStats() {
+    $pdo = getDB();
+    $stmt = $pdo->query("
+        SELECT l.id, l.name, COUNT(DISTINCT al.application_id) as count
+        FROM languages l
+        LEFT JOIN application_languages al ON l.id = al.language_id
+        GROUP BY l.id
+        ORDER BY count DESC, l.name ASC
+    ");
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function getAllLanguages() {
+    $pdo = getDB();
+    $stmt = $pdo->query("SELECT * FROM languages ORDER BY id");
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
