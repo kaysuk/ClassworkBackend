@@ -76,4 +76,14 @@ function initDB() {
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ");
+    
+    // Инициализируем админа по умолчанию (если его ещё нет)
+    $stmt = $pdo->query("SELECT COUNT(*) FROM admins");
+    $count = $stmt->fetchColumn();
+    
+    if ($count == 0) {
+        $passwordHash = password_hash('admin', PASSWORD_DEFAULT);
+        $stmt = $pdo->prepare("INSERT INTO admins (login, password_hash) VALUES (?, ?)");
+        $stmt->execute(['admin', $passwordHash]);
+    }
 }
