@@ -6,8 +6,21 @@ require_once 'validation.php';
 
 initDB();
 
-// HTTP Basic Auth проверка
-requireHttpAuth();
+// Обработка входа админа
+if ($_POST && isset($_POST['admin_login'])) {
+    $login = $_POST['admin_login'] ?? '';
+    $password = $_POST['admin_password'] ?? '';
+    
+    $result = loginAdmin($login, $password);
+    
+    if ($result['success']) {
+        $_SESSION['admin_authenticated'] = true;
+        header("Location: admin.php");
+        exit();
+    } else {
+        $loginError = $result['error'];
+    }
+}
 
 // Обработка выхода
 if (isset($_GET['logout'])) {
@@ -23,8 +36,169 @@ if (isset($_GET['logout'])) {
     exit();
 }
 
-$action = $_GET['action'] ?? 'list';
+POST['admin_login'])) {
+    $login = $_POST['admin_login'] ?? '';
+    $password = $_POST['admin_password'] ?? '';
+    
+    $result = loginAdmin($login, $password);
+    
+    if ($result['success']) {
+        $_SESSION['admin_authenticated'] = true;
+        header("Location: admin.php");
+        exit;
+    } else {
+        $loginError = $result['error'];
+    }
+}
 
+// Проверяем авторизацию
+if (!isset($_SESSION['admin_authenticated'])) {
+    // Показываем форму входа
+    ?>
+    <!DOCTYPE html>
+    <html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <title>Вход администратора</title>
+        <style>
+            * {
+                box-sizing: border-box;
+                font-family: Arial, sans-serif;
+            }
+            
+            body {
+                background: linear-gradient(135deg, #667eea, #764ba2);
+                margin: 0;
+                padding: 40px;
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            .login-box {
+                background: white;
+                padding: 40px;
+                border-radius: 12px;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+                width: 100%;
+                max-width: 400px;
+            }
+            
+            h2 {
+                text-align: center;
+                margin-top: 0;
+                color: #333;
+            }
+            
+            .error {
+                background: #fee;
+                border-left: 4px solid #f44;
+                padding: 12px;
+                margin-bottom: 20px;
+                border-radius: 4px;
+                color: #c33;
+            }
+            
+            label {
+                display: block;
+                margin-top: 15px;
+                margin-bottom: 5px;
+                font-weight: bold;
+                color: #333;
+            }
+            
+            input {
+                width: 100%;
+                padding: 10px;
+                border: 1px solid #ccc;
+                border-radius: 6px;
+                font-size: 14px;
+                transition: 0.2s;
+            }
+            
+            input:focus {
+                border-color: #667eea;
+                outline: none;
+            }
+            
+            button {
+                width: 100%;
+                margin-top: 20px;
+                padding: 12px;
+                background: #667eea;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                font-size: 16px;
+                font-weight: bold;
+                cursor: pointer;
+                transition: 0.2s;
+            }
+            
+            button:hover {
+                background: #5a67d8;
+            }
+            
+            .hint {
+                text-align: center;
+                margin-top: 20px;
+                font-size: 13px;
+                color: #666;
+            }
+            
+            .links {
+                text-align: center;
+                margin-top: 15px;
+                padding-top: 15px;
+                border-top: 1px solid #ddd;
+            }
+            
+            .links a {
+                color: #667eea;
+                text-decoration: none;
+            }
+            
+            .links a:hover {
+                text-decoration: underline;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="login-box">
+            <h2>🔐 Вход администратора</h2>
+            
+            <?php if (isset($loginError)): ?>
+                <div class="error"><?php echo htmlspecialchars($loginError); ?></div>
+            <?php endif; ?>
+            
+            <form method="POST">
+                <label for="login">Логин</label>
+                <input type="text" id="login" name="admin_login" required autofocus>
+                
+                <label for="password">Пароль</label>
+                <input type="password" id="password" name="admin_password" required>
+                
+                <button type="submit">Вход</button>
+            </form>
+            
+            <div class="hint">
+                Для первого входа используйте:<br>
+                <strong>Логин:</strong> admin<br>
+                <strong>Пароль:</strong> admin
+            </div>
+            
+            <div class="links">
+                <a href="index.html">← Вернуться на главную</a>
+            </div>
+        </div>
+    </body>
+    </html>
+    <?php
+    exit;
+}
+
+$action = $_GET['action'] ?? 'list';
 $apps = getAllApplications();
 $languages = getAllLanguages();
 $stats = getLanguageStats();
