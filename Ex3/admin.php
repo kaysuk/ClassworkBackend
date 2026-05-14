@@ -332,6 +332,22 @@ tr:hover {
 .delete-btn:hover {
     background: #a22;
 }
+
+.logout-link {
+    color: #c33;
+    text-decoration: none;
+    font-weight: bold;
+    border: 1px solid #ccc;
+    padding: 8px 12px;
+    border-radius: 4px;
+    display: inline-block;
+    transition: 0.2s;
+}
+
+.logout-link:hover {
+    background: #fee;
+    border-color: #c33;
+}
 </style>
 </head>
 <body>
@@ -343,6 +359,7 @@ tr:hover {
         </div>
         <div class="admin-info">
             <p>Авторизованы как администратор</p>
+            <a href="admin.php?logout=1" class="logout-link">Выход</a>
         </div>
     </div>
 

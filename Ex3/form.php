@@ -385,12 +385,13 @@ button:hover {
 function copyToClipboard(elementId) {
     const element = document.getElementById(elementId);
     const text = element.textContent || element.innerText;
+    const button = event.target;
+    
     navigator.clipboard.writeText(text).then(() => {
-        const btn = event.target;
-        const original = btn.textContent;
-        btn.textContent = '✓ Скопировано';
+        const original = button.textContent;
+        button.textContent = '✓ Скопировано';
         setTimeout(() => {
-            btn.textContent = original;
+            button.textContent = original;
         }, 2000);
     }).catch(() => {
         alert('Не удалось скопировать. Пожалуйста, скопируйте вручную.');
