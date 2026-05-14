@@ -36,20 +36,7 @@ if (isset($_GET['logout'])) {
     exit();
 }
 
-POST['admin_login'])) {
-    $login = $_POST['admin_login'] ?? '';
-    $password = $_POST['admin_password'] ?? '';
-    
-    $result = loginAdmin($login, $password);
-    
-    if ($result['success']) {
-        $_SESSION['admin_authenticated'] = true;
-        header("Location: admin.php");
-        exit;
-    } else {
-        $loginError = $result['error'];
-    }
-}
+
 
 // Проверяем авторизацию
 if (!isset($_SESSION['admin_authenticated'])) {
