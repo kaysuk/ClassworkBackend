@@ -11,7 +11,14 @@ requireHttpAuth();
 
 // Обработка выхода
 if (isset($_GET['logout'])) {
+    // Очищаем сессию
     logout();
+    
+    // Отправляем заголовки для HTTP Basic Auth logout
+    header('HTTP/1.0 401 Unauthorized');
+    header('WWW-Authenticate: Basic realm="Admin Area"');
+    
+    // Перенаправляем на страницу входа
     header("Location: login.php");
     exit();
 }
