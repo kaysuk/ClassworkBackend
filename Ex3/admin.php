@@ -10,7 +10,44 @@ initDB();
 if (isset($_GET['logout'])) {
     header('HTTP/1.0 401 Unauthorized');
     header('WWW-Authenticate: Basic realm="Admin Area"');
-    header('Location: ../index.html');
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Pragma: no-cache');
+    header('Expires: Thu, 01 Jan 1970 00:00:00 GMT');
+    ?>
+    <!DOCTYPE html>
+    <html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <title>Выход...</title>
+        <style>
+            body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f5f5f5; }
+            .message { background: #efe; padding: 20px; border-radius: 8px; display: inline-block; }
+        </style>
+    </head>
+    <body>
+        <div class="message">
+            <p>Вы вышли из системы</p>
+            <p>Перенаправление на главную страницу...</p>
+        </div>
+        <script>
+            // Пытаемся очистить HTTP Auth кэш браузера
+            // Отправляем запрос с неверными учетными данными
+            fetch('admin.php', {
+                method: 'GET',
+                credentials: 'omit',
+                headers: {
+                    'Authorization': 'Basic ' + btoa('logout:logout')
+                }
+            }).catch(() => {});
+            
+            // Редирект через 500ms
+            setTimeout(() => {
+                window.location.href = '../index.html';
+            }, 500);
+        </script>
+    </body>
+    </html>
+    <?php
     exit;
 }
 
