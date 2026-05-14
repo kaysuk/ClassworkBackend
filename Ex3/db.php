@@ -94,3 +94,4 @@ function initializeDefaultAdmin() {
         $stmt = $pdo->prepare("INSERT INTO admins (login, password_hash) VALUES (?, ?)");
         $stmt->execute(['admin', $passwordHash]);
     }
+}
