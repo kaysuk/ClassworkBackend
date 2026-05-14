@@ -247,14 +247,14 @@ button:hover {
         
         <div class="cred-line">
             <div class="cred-label">Логин:</div>
-            <div class="cred-value"><?php echo htmlspecialchars($newLogin); ?></div>
-            <button class="copy-btn" onclick="navigator.clipboard.writeText('<?php echo htmlspecialchars($newLogin); ?>')">Копировать</button>
+            <div class="cred-value" id="login-value"><?php echo htmlspecialchars($newLogin); ?></div>
+            <button class="copy-btn" onclick="copyToClipboard('login-value')">Копировать</button>
         </div>
         
         <div class="cred-line">
             <div class="cred-label">Пароль:</div>
-            <div class="cred-value"><?php echo htmlspecialchars($newPassword); ?></div>
-            <button class="copy-btn" onclick="navigator.clipboard.writeText('<?php echo htmlspecialchars($newPassword); ?>')">Копировать</button>
+            <div class="cred-value" id="password-value"><?php echo htmlspecialchars($newPassword); ?></div>
+            <button class="copy-btn" onclick="copyToClipboard('password-value')">Копировать</button>
         </div>
         
         <p style="margin-bottom: 0;"><a href="login.php" style="color: #667eea; font-weight: bold;">→ Перейти к входу</a></p>
@@ -380,6 +380,23 @@ button:hover {
 </form>
 <?php endif; ?>
 </div>
+
+<script>
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    const text = element.textContent || element.innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = event.target;
+        const original = btn.textContent;
+        btn.textContent = '✓ Скопировано';
+        setTimeout(() => {
+            btn.textContent = original;
+        }, 2000);
+    }).catch(() => {
+        alert('Не удалось скопировать. Пожалуйста, скопируйте вручную.');
+    });
+}
+</script>
 
 </body>
 </html>

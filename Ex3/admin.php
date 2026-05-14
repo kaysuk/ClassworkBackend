@@ -10,6 +10,7 @@ initDB();
 requireHttpAuth();
 
 $action = $_GET['action'] ?? 'list';
+
 $apps = getAllApplications();
 $languages = getAllLanguages();
 $stats = getLanguageStats();
