@@ -10,7 +10,8 @@ initDB();
 if (isset($_GET['logout'])) {
     header('HTTP/1.0 401 Unauthorized');
     header('WWW-Authenticate: Basic realm="Admin Area"');
-    die('Вы вышли из системы. Закройте браузер или введите новые учетные данные.');
+    header('Location: ../index.html');
+    exit;
 }
 
 // HTTP Basic Auth проверка
