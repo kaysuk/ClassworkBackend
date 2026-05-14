@@ -9,6 +9,13 @@ initDB();
 // HTTP Basic Auth проверка
 requireHttpAuth();
 
+// Обработка выхода
+if (isset($_GET['logout'])) {
+    logout();
+    header("Location: login.php");
+    exit();
+}
+
 $action = $_GET['action'] ?? 'list';
 
 $apps = getAllApplications();
