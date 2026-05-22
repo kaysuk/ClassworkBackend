@@ -78,8 +78,10 @@
 </head>
 <body>
     <?php
-    // Render the portfolio content
-    if (!empty($c['#content']['front'])) {
+    // Render the content based on the current module
+    if (!empty($c['#content']['admin'])) {
+      echo $c['#content']['admin'];
+    } elseif (!empty($c['#content']['front'])) {
       echo $c['#content']['front'];
     }
     ?>
