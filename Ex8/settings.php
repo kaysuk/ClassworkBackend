@@ -21,6 +21,7 @@ $conf = array(
 // Определения ресурсов для диспатчера.
 $urlconf = array(
   '' => array('module' => 'front'),
+  '/^admin$/' => array('module' => 'admin', 'auth' => 'auth/admin'),
   '/^portfolio$/' => array('module' => 'portfolio'),
   '/^about$/' => array('module' => 'about'),
   '/^contact$/' => array('module' => 'contact'),

@@ -7,16 +7,56 @@ function front_get($request) {
 
 // Обработчик запросов методом POST для главной страницы (обработка форм).
 function front_post($request) {
-  // Здесь можно добавить обработку формы
-  if (!empty($request['post'])) {
-    return render_portfolio();
-  }
-  return not_found();
+    if (empty($request['post'])) {
+        return not_found();
+    }
+
+    $name = trim($request['post']['field_vashe_imya'][0]['value'] ?? '');
+    $phone = trim($request['post']['field_telefon'][0]['value'] ?? '');
+    $email = trim($request['post']['field_e_mail'][0]['value'] ?? '');
+    $message = trim($request['post']['field_vash_'][0]['value'] ?? '');
+    $agreed = isset($request['post']['fz152_agreement']) && $request['post']['fz152_agreement'] == '1';
+
+    $errors = array();
+    if ($name === '') {
+        $errors[] = 'Пожалуйста, укажите ваше имя.';
+    }
+    if ($phone === '') {
+        $errors[] = 'Пожалуйста, укажите телефон.';
+    }
+    if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $errors[] = 'Пожалуйста, укажите корректный E-mail.';
+    }
+    if ($message === '') {
+        $errors[] = 'Пожалуйста, оставьте текст сообщения.';
+    }
+    if (!$agreed) {
+        $errors[] = 'Для отправки заявки необходимо принять соглашение о персональных данных.';
+    }
+
+    if (!empty($errors)) {
+        return render_portfolio('Ошибка: ' . implode(' ', $errors));
+    }
+
+    require_once __DIR__ . '/../scripts/db.php';
+    initDB();
+    $pdo = getDB();
+
+    $stmt = $pdo->prepare('INSERT INTO contact_requests (name, phone, email, message, agreed) VALUES (?, ?, ?, ?, ?)');
+    $stmt->execute([$name, $phone, $email, $message, $agreed ? 1 : 0]);
+
+    return render_portfolio('Спасибо! Ваша заявка принята и сохранена в базе данных.');
 }
 
 // Функция для отрисовки основного контента портфолио
-function render_portfolio() {
-  return <<<'HTML'
+function render_portfolio($notice = '') {
+    $noticeHtml = '';
+    if ($notice !== '') {
+        $noticeHtml = '<div style="margin: 1rem auto; padding: 1rem 1.25rem; max-width: 1100px; background: #e8f8f1; border: 1px solid #80c7a3; color: #0d3f2a; border-radius: 8px;">' . htmlspecialchars($notice) . '</div>';
+    }
+
+    return <<<HTML
+    $noticeHtml
     <div class="mask"></div>
     <div class="mask__area">
         <video autoplay muted loop id="myVideo">
@@ -32,7 +72,7 @@ function render_portfolio() {
     </nav>
     <ul class="nav-links" id="nav-links">
         <li><a href="#help">ПОДДЕРЖКА DRUPAL</a></li>
-        <li><a href="#" id="admnstr">АДМИНИСТРИРОВАНИЕ</a></li>
+        <li><a href="./index.php?q=admin" id="admnstr">АДМИНИСТРИРОВАНИЕ</a></li>
         <ul id="admnstr__list">
             <li><a href="#block-copyright">МИГРАЦИЯ</a></li>
             <li><a href="#block-copyright">БЭКАПЫ</a></li>
@@ -61,7 +101,7 @@ function render_portfolio() {
                 </div>
                 <ul class="navigation__list">
                     <li class="navigation__item"><a href="#help" class="navigation__link">ПОДДЕРЖКА DRUPAL</a></li>
-                    <li class="navigation__item"><a href="#" class="navigation__link" id="admnstr_desct">АДМИНИСТРИРОВАНИЕ</a>
+                    <li class="navigation__item"><a href="./index.php?q=admin" class="navigation__link" id="admnstr_desct">АДМИНИСТРИРОВАНИЕ</a>
                     <ul id="admnstr__desct-list">
                         <li><a href="#block-copyright">МИГРАЦИЯ</a></li>
                         <li><a href="#block-copyright">БЭКАПЫ</a></li>

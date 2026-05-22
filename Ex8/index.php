@@ -1,4 +1,5 @@
 <?php
+session_start();
 include('./settings.php');
 
 // Выключаем отображение ошибок после отладки.
